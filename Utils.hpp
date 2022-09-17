@@ -12,8 +12,6 @@
 /// STRUCTURES
 ////////////////////////
 
-
-
 ////////////////////////
 /// VECTOR2D
 ////////////////////////
@@ -126,6 +124,151 @@ public:
 };
 
 
+////////////////////////
+/// VECTOR3D
+////////////////////////
+
+struct Vector3D
+{
+	float x, y, z;
+
+	Vector3D() = default;
+
+	constexpr Vector3D(float _x, float _y, float _z) noexcept
+		: x{ _x }
+		, y{ _y }
+		, z{ _z }
+	{
+	}
+	 
+	// Index Vector
+	[[nodiscard]] float& operator [] (int i)
+	{
+		return ((&x)[i]);
+	}
+
+	// Index Vector
+	[[nodiscard]] const float& operator [] (int i) const
+	{
+		return ((&x)[i]);
+	}
+
+	// Scalar Multiplication
+	[[nodiscard]] Vector3D& operator *=(float s) noexcept
+	{
+		x *= s;
+		y *= s;
+		z *= s;
+		return *this;
+	}
+
+	// Scalar Division
+	[[nodiscard]] Vector3D& operator /=(float s) noexcept
+	{
+		float s = 1.0f / s;
+		x *= s;
+		y *= s;
+		z *= s;
+		return *this;
+	}
+
+	// Vector Addition
+	[[nodiscard]] Vector3D& operator +=(const Vector3D& v) noexcept
+	{
+		x += v.x;
+		y += v.y;
+		z += v.z;
+		return *this;
+	}
+
+	// Vector Subtraction
+	[[nodiscard]] Vector3D& operator -=(const Vector3D& v) noexcept
+	{
+		x -= v.x;
+		y -= v.y;
+		z -= v.z;
+		return *this;
+	}
+};
+
+struct Matrix3D
+{
+	public: 
+
+	Matrix3D() = default;
+
+	Matrix3D(
+		float n00, float n01, float n02,
+		float n03, float n04, float n05,
+		float n06, float n07, float n08
+	)
+	{
+		n[0][0] = n00, n[0][1] = n01, n[0][2] = n02,
+		n[0][3] = n03, n[0][4] = n04, n[0][5] = n05,
+		n[0][6] = n06, n[0][7] = n07, n[0][8] = n08;
+	}
+
+private:
+	float n[3][3];
+};
+
+
+////////////////////////
+/// INLINE FUNCTION
+////////////////////////
+ 
+////////////////////////
+// BASIC MANIPULATION
+////////////////////////
+
+// Scalar Multiplication
+[[nodiscard]] inline constexpr Vector3D operator *(const Vector3D& v, float s) noexcept
+{
+	return Vector3D(v.x * s, v.y * s, v.z * s);
+}
+
+// Scalar Division
+[[nodiscard]] inline constexpr Vector3D operator /(const Vector3D& v, float s) noexcept
+{
+	s = 1.0f / s;
+	return Vector3D(v.x * s, v.y * s, v.z * s);
+}
+
+// Invert Vector
+[[nodiscard]] inline constexpr Vector3D operator -(const Vector3D& v) noexcept
+{
+	return Vector3D(-v.x, -v.y, -v.z);
+}
+
+// Vector Addition
+[[nodiscard]] inline constexpr Vector3D operator +(const Vector3D& v, const Vector3D& b) noexcept
+{
+	return Vector3D(v.x + b.x, v.y + b.y, v.z + b.z);
+}
+
+// Vector Subtraction
+[[nodiscard]] inline constexpr Vector3D operator +(const Vector3D& v, const Vector3D& b) noexcept
+{
+	return Vector3D(v.x - b.x, v.y - b.y, v.z - b.z);
+}
+
+
+////////////////////////
+/// SPECIAL
+////////////////////////
+
+// Compute Magnitude
+[[nodiscard]] inline float Magnitude(const Vector3D& v)
+{
+	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+
+}
+
+// Normalize Vector
+[[nodiscard]] inline Vector3D Normalize(const Vector3D& v)
+{
+	return v / Magnitude(v);
+}
 
 ////////////////////////
 /// ALGORITHMS
