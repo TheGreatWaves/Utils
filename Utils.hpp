@@ -7,7 +7,7 @@
 #include <optional>
 #include <execution>
 #include <iostream>
-
+#include <functional>
 
 // EXTERN INCLUDES
 
@@ -242,7 +242,7 @@ public:
 		std::transform(data.begin(), data.end(), other.data.begin(), data.begin(), std::minus<T>());
 		return *this;
 	}
-
+	
 	/**
 	 * Return the summation of two 2D vectors.
 	 */
@@ -261,10 +261,40 @@ public:
 		return lhs;
 	}
 
+	/**
+	 * Check to see if two vectors are equivalent.
+	 */
+	friend bool operator==(const Vec2D& lhs, const Vec2D& rhs) 
+	{
+		// Check that the dimensions of the two Vec2D objects are equal
+		if (lhs.width != rhs.width || lhs.height != rhs.height) 
+		{
+			return false;
+		}
+
+		// Check that the elements of the two Vec2D objects are equal
+		return lhs.data == rhs.data;
+	}
+
+	/**
+	 * Check to see if two vectors are not equivalent.
+	 */
+	friend bool operator!=(const Vec2D& lhs, const Vec2D& rhs) 
+	{
+		return !(lhs == rhs);
+	}
+
+
 	[[nodiscard]] std::pair<std::size_t, std::size_t> dim() const
 	{
 		return { width, height };
 	}
+	
+
+	/**
+	 * Hash function.
+	 */
+	friend struct std::hash<Vec2D<T>>;
 
 private:
 	std::size_t width;  	///< Width of the 2D vector.
@@ -273,6 +303,19 @@ private:
 
 };
 
+template <typename T>
+struct std::hash<Vec2D<T>> 
+{
+	std::size_t operator()(const Vec2D<T>& vec) const 
+	{
+		std::size_t h = 0;
+		for (const auto& element : vec.data) 
+		{
+			h ^= std::hash<T>()(element);
+		}
+		return h;
+	}
+};
 
 ////////////////////////
 /// VECTOR3D

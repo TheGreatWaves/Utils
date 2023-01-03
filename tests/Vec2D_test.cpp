@@ -1,6 +1,7 @@
 #include "Utils.hpp"
 #include "catch2/catch_test_macros.hpp"
 #include "catch2/catch_session.hpp"
+#include <unordered_set>
 
 int main( int argc, char* argv[] ) {
   // your setup ...
@@ -165,4 +166,72 @@ TEST_CASE("Operations")
         REQUIRE(vec2D3.at(1, 2) == -1);
         REQUIRE(vec2D3.at(2, 2) == -1);
     }
+}
+
+TEST_CASE("Vec2D equality") {
+  std::vector<std::vector<int>> rvec = 
+    {
+        { 1, 2, 3 },
+        { 4, 5, 6 },
+        { 7, 8, 9 }
+    };
+
+    std::vector<std::vector<int>> rvec2 = 
+    {
+        { 1, 2, 3 },
+        { 4, 5, 6 },
+        { 7, 8, 9 }
+    };
+
+    std::vector<std::vector<int>> rvec3 = 
+    {
+        { 1, 2, 3 },
+        { 5, 3, 5 },
+        { 3, 1, 2 }
+    };
+
+    Vec2D<int> vec( rvec );
+    Vec2D<int> vec2( rvec2 );
+    Vec2D<int> vec3( rvec3);
+
+  REQUIRE(vec == vec2);  
+  REQUIRE(vec2 != vec3);  
+}
+
+TEST_CASE("Hash function") 
+{
+    std::vector<std::vector<int>> rvec = 
+    {
+        { 1, 2, 3 },
+        { 4, 5, 6 },
+        { 7, 8, 9 }
+    };
+
+    std::vector<std::vector<int>> rvec2 = 
+    {
+        { 1, 2, 3 },
+        { 4, 5, 6 },
+        { 7, 8, 9 }
+    };
+
+    std::vector<std::vector<int>> rvec3 = 
+    {
+        { 1, 2, 3 },
+        { 5, 3, 5 },
+        { 3, 1, 2 }
+    };
+
+    Vec2D<int> vec( rvec );
+    Vec2D<int> vec2( rvec2 );
+    Vec2D<int> vec3( rvec3);
+
+    std::unordered_set<Vec2D<int>> set;
+    set.insert(vec);
+    set.insert(vec2);
+    set.insert(vec3);
+
+    REQUIRE(set.size() == 2);
+    REQUIRE(set.count(vec) == 1);
+    REQUIRE(set.count(vec2) == 1);
+    REQUIRE(set.count(vec3) == 1);
 }
