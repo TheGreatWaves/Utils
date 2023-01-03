@@ -1,10 +1,11 @@
 #pragma once
 
 // CORE INCLUDES
-#include <iostream>
 #include <vector>
 #include <cassert>
 #include <algorithm>
+#include <optional>
+#include <execution>
 
 // EXTERN INCLUDES
 
@@ -24,25 +25,81 @@ class Vec2D
 {
 public:
 	/**
-	 * Initializes an empty 2D vector of given width and height.
+	 * STL compatible. (Thankfully nothing really needs to be done thanks to the underlying vector)
 	 */
-	Vec2D(const std::size_t width, const std::size_t height)
-		: data(width* height)
-		, width(width)
-		, height(height)
+	using value_type = T;
+	using iterator = typename std::vector<T>::iterator;
+	using const_iterator = typename std::vector<T>::const_iterator;
+	using reverse_iterator = typename std::vector<T>::reverse_iterator;
+	using const_reverse_iterator = typename std::vector<T>::const_reverse_iterator;
 
+	iterator begin() noexcept
 	{
+		return data.begin();
 	}
+
+	[[nodiscard]] const_iterator begin() const noexcept
+	{
+		return data.begin();
+	}
+
+	iterator end() noexcept
+	{
+		return data.end();
+	}
+
+	[[nodiscard]] const_iterator end() const noexcept
+	{
+		return data.end();
+	}
+
+	reverse_iterator rbegin() noexcept
+	{
+		return data.rbegin();
+	}
+
+	[[nodiscard]] const_reverse_iterator rbegin() const noexcept
+	{
+		return data.rbegin();
+	}
+
+	reverse_iterator rend() noexcept
+	{
+		return data.rend();
+	}
+
+	[[nodiscard]] const_reverse_iterator rend() const noexcept
+	{
+		return data.rend();
+	}
+
 	/**
-	 * Initializes a 2D vector of given width and height, filled with the provided default value.
+	 * Initializes a 2D vector of given width and height, filled with the provided default value (if provided).
 	 */
-	Vec2D(const std::size_t width, const std::size_t height, T defaultValue)
-		: data(width* height, defaultValue)
-		, width(width)
+	Vec2D(const std::size_t width, const std::size_t height, std::optional<T> defaultValue = {})
+		: width(width)
 		, height(height)
-
+		, data(width * height, defaultValue.value_or(T{}))
 	{
 	}
+
+	/**
+	 * Initializes a Vec2D object from a raw 2D vector.
+	 */
+	explicit Vec2D(const std::vector<std::vector<T>>& other)
+		: width(std::reduce(other.begin(), other.end(), std::size_t{ 0 }, [](const auto& a, const auto& b) { return std::max(a, b.size()); }))
+		, height(other.size())
+		, data(width* height)
+	{
+		for (std::size_t y = 0; y < other.size(); ++y)
+		{
+			for (std::size_t x = 0; x < other[y].size(); ++x)
+			{
+				this->at(y, x) = other[y][x];
+			}
+		}
+	}
+
 	/**
 	 * Returns the element at row, column. Const qualified.
 	 */
@@ -50,8 +107,8 @@ public:
 	{
 		assert(row < this->height&& col < this->width); // In range check (Only for debug mode)
 		return this->data[col + row * this->width];
-
 	}
+
 	/**
 	 * Returns the element at row, column. Can be overwritten.
 	 */
@@ -60,6 +117,23 @@ public:
 		assert(row < this->height&& col < this->width); // In range check (Only for debug mode)
 		return this->data[col + row * this->width];
 	}
+
+	/**
+	 * Returns the element at row, column. Can be overwritten.
+	 */
+	T& operator()(std::size_t x, std::size_t y)
+	{
+		return this->at(y, x);
+	}
+
+	/**
+	 * Returns the element at row, column. Const qualified.
+	 */
+	const T& operator()(std::size_t x, std::size_t y) const
+	{
+		return this->at(y, x);
+	}
+
 	/**
 	 * Retrieve the underlying vector.
 	 */
@@ -67,6 +141,7 @@ public:
 	{
 		return this->data;
 	}
+
 	/**
 	 * Retrieve the underlying vector. Const qualified.
 	 */
@@ -74,6 +149,7 @@ public:
 	{
 		return this->data;
 	}
+
 	/**
 	 * Returns whether the vector 2D is empty or not.
 	 */
@@ -81,46 +157,90 @@ public:
 	{
 		return this->data.empty();
 	}
+
 	/**
-	 * Copy the values of a raw 2D vector.
-	 *
+	 * Fill all elements with the given value.
 	 */
-	void copy(const std::vector<std::vector<T>>& other)
+	void fill(const T& value)
 	{
-		assert(other.size() == this->height);
-		for (std::size_t y = 0; y < other.size(); ++y)
+		std::fill(data.begin(), data.end(), value);
+	}
+
+	/**
+	 * Swaps the contents of the Vec2D object with another Vec2D object.
+	 */
+	void swap(Vec2D& other) noexcept
+	{
+		std::swap(data, other.data);
+		std::swap(width, other.width);
+		std::swap(height, other.height);
+	}
+
+	/**
+	* Removes all elements from the Vec2D object.
+	*/
+	void clear()
+	{
+		data.clear();
+	}
+
+	/**
+	 * Reserves a specific amount of memory for the Vec2D object.
+	 */
+	void reserve(std::size_t n)
+	{
+		data.reserve(n);
+	}
+
+	/**
+	 * Searches the Vec2D object for a specific element.
+	 * Returns an std::optional containing the position of the element if found, or an empty std::optional if not found.
+	 */
+	[[nodiscard]] std::optional<std::pair<std::size_t, std::size_t>> find(const T& value) const
+	{
+		// Use std::find to search for the specified value in the data member
+		auto it = std::find(data.begin(), data.end(), value);
+
+		// If the value was not found, return an empty std::optional
+		if (it == data.end())
 		{
-			for (std::size_t x = 0; x < other.at(0).size(); ++x)
-			{
-				assert(other.at(y).size() <= this->width);
-				if (x >= other.at(y).size())
-				{
-					this->at(y, x) = T();
-					continue;
-				}
-				this->at(y, x) = other.at(y).at(x);
-			}
+			return std::nullopt;
 		}
+
+		// Calculate the index of the element in the data member
+		const std::size_t index = std::distance(data.begin(), it);
+
+		// Calculate the position of the element using the index and the width of the Vec2D object
+		return std::make_pair(index % width, index / width);
 	}
+
 	/**
-	 * Converts a raw 2D vector into Vec2D.
+	 *	Add current 2D Vector with another one and return the result.
 	 */
-	static Vec2D<T> convert(const std::vector<std::vector<T>>& other)
+	Vec2D& operator+=(const Vec2D& other)
 	{
-		std::size_t largestWidth = 0;
-		auto findLargestWidth = [&](const auto& vec) {if (vec.size() > largestWidth) largestWidth = vec.size(); };
-		std::for_each(other.begin(), other.end(), findLargestWidth);
-		Vec2D<T> convertedVector(largestWidth, other.size());
-		convertedVector.copy(other);
-		return convertedVector;
+		assert(this->width == other.width && this->height == other.height);
+		std::transform(data.begin(), data.end(), other.data.begin(), data.begin(), std::plus<T>());
+		return *this;
 	}
-	// Members
-private:
-	std::vector<T> data;
+
+	/**
+	 * Return the summation of two 2D vectors.
+	 */
+	friend Vec2D operator+(Vec2D lhs, const Vec2D& rhs)
+	{
+		lhs += rhs;
+		return lhs;
+	}
+
 
 public:
 	const std::size_t width;  ///< Width of the 2D vector.
 	const std::size_t height; ///< Height of the 2D vector.
+
+private:
+	std::vector<T> data;
+
 };
 
 
@@ -140,21 +260,21 @@ struct Vector3D
 		, z{ _z }
 	{
 	}
-	 
+
 	// Index Vector
-	[[nodiscard]] float& operator [] (int i)
+	[[nodiscard]] float& operator [](int i)
 	{
 		return ((&x)[i]);
 	}
 
 	// Index Vector
-	[[nodiscard]] const float& operator [] (int i) const
+	[[nodiscard]] const float& operator [](int i) const
 	{
 		return ((&x)[i]);
 	}
 
 	// Scalar Multiplication
-	[[nodiscard]] Vector3D& operator *=(float s) noexcept
+	[[nodiscard]] Vector3D& operator *=(const float s) noexcept
 	{
 		x *= s;
 		y *= s;
@@ -163,12 +283,12 @@ struct Vector3D
 	}
 
 	// Scalar Division
-	[[nodiscard]] Vector3D& operator /=(float s) noexcept
+	[[nodiscard]] Vector3D& operator /=(const float s) noexcept
 	{
-		float s = 1.0f / s;
-		x *= s;
-		y *= s;
-		z *= s;
+		const float t = 1.0f / s;
+		x *= t;
+		y *= t;
+		z *= t;
 		return *this;
 	}
 
@@ -193,8 +313,7 @@ struct Vector3D
 
 struct Matrix3D
 {
-	public: 
-
+public:
 	Matrix3D() = default;
 
 	Matrix3D(
@@ -204,19 +323,19 @@ struct Matrix3D
 	)
 	{
 		n[0][0] = n00, n[0][1] = n01, n[0][2] = n02,
-		n[0][3] = n03, n[0][4] = n04, n[0][5] = n05,
-		n[0][6] = n06, n[0][7] = n07, n[0][8] = n08;
+			n[0][3] = n03, n[0][4] = n04, n[0][5] = n05,
+			n[0][6] = n06, n[0][7] = n07, n[0][8] = n08;
 	}
 
 private:
-	float n[3][3];
+	float n[3][3]{};
 };
 
 
 ////////////////////////
 /// INLINE FUNCTION
 ////////////////////////
- 
+
 ////////////////////////
 // BASIC MANIPULATION
 ////////////////////////
@@ -224,32 +343,32 @@ private:
 // Scalar Multiplication
 [[nodiscard]] inline constexpr Vector3D operator *(const Vector3D& v, float s) noexcept
 {
-	return Vector3D(v.x * s, v.y * s, v.z * s);
+	return { v.x * s, v.y * s, v.z * s };
 }
 
 // Scalar Division
 [[nodiscard]] inline constexpr Vector3D operator /(const Vector3D& v, float s) noexcept
 {
 	s = 1.0f / s;
-	return Vector3D(v.x * s, v.y * s, v.z * s);
+	return { v.x * s, v.y * s, v.z * s };
 }
 
 // Invert Vector
-[[nodiscard]] inline constexpr Vector3D operator -(const Vector3D& v) noexcept
+[[nodiscard]] inline constexpr Vector3D operator-(const Vector3D& v) noexcept
 {
-	return Vector3D(-v.x, -v.y, -v.z);
+	return { -v.x, -v.y, -v.z };
 }
 
 // Vector Addition
-[[nodiscard]] inline constexpr Vector3D operator +(const Vector3D& v, const Vector3D& b) noexcept
+[[nodiscard]] inline constexpr Vector3D operator+(const Vector3D& v, const Vector3D& b) noexcept
 {
-	return Vector3D(v.x + b.x, v.y + b.y, v.z + b.z);
+	return { v.x + b.x, v.y + b.y, v.z + b.z };
 }
 
 // Vector Subtraction
-[[nodiscard]] inline constexpr Vector3D operator +(const Vector3D& v, const Vector3D& b) noexcept
+[[nodiscard]] inline constexpr Vector3D operator-(const Vector3D& v, const Vector3D& b) noexcept
 {
-	return Vector3D(v.x - b.x, v.y - b.y, v.z - b.z);
+	return { v.x - b.x, v.y - b.y, v.z - b.z };
 }
 
 
@@ -261,7 +380,6 @@ private:
 [[nodiscard]] inline float Magnitude(const Vector3D& v)
 {
 	return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
-
 }
 
 // Normalize Vector
@@ -301,5 +419,8 @@ private:
 *	},
 *	std::variant value parameter);
 */
-template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-
+template <class... Ts>
+struct overloaded : Ts...
+{
+	using Ts::operator()...;
+};
