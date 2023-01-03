@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <optional>
 #include <execution>
+#include <iostream>
+
 
 // EXTERN INCLUDES
 
@@ -171,9 +173,16 @@ public:
 	 */
 	void swap(Vec2D& other) noexcept
 	{
-		std::swap(data, other.data);
-		std::swap(width, other.width);
-		std::swap(height, other.height);
+		auto tempData = std::move(data);
+		data = std::move(other.data);
+		other.data = std::move(tempData);
+		std::size_t tempWidth = width;
+		width = other.width;
+		other.width = tempWidth;
+
+		std::size_t tempHeight = height;
+		height = other.height;
+		other.height = tempHeight;
 	}
 
 	/**
@@ -225,6 +234,16 @@ public:
 	}
 
 	/**
+	 *	Minus current 2D Vector with another one and return the result.
+	 */
+	Vec2D& operator-=(const Vec2D& other)
+	{
+		assert(this->width == other.width && this->height == other.height);
+		std::transform(data.begin(), data.end(), other.data.begin(), data.begin(), std::minus<T>());
+		return *this;
+	}
+
+	/**
 	 * Return the summation of two 2D vectors.
 	 */
 	friend Vec2D operator+(Vec2D lhs, const Vec2D& rhs)
@@ -233,13 +252,24 @@ public:
 		return lhs;
 	}
 
+	/**
+	 * Return the subtraction result of two 2D vectors.
+	 */
+	friend Vec2D operator-(Vec2D lhs, const Vec2D& rhs)
+	{
+		lhs -= rhs;
+		return lhs;
+	}
 
-public:
-	const std::size_t width;  ///< Width of the 2D vector.
-	const std::size_t height; ///< Height of the 2D vector.
+	[[nodiscard]] std::pair<std::size_t, std::size_t> dim() const
+	{
+		return { width, height };
+	}
 
 private:
-	std::vector<T> data;
+	std::size_t width;  	///< Width of the 2D vector.
+	std::size_t height; 	///< Height of the 2D vector.
+	std::vector<T> data;	///< Underlying collection.
 
 };
 
