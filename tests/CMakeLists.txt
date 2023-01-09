@@ -1,5 +1,5 @@
 # Specify the test executable and its source files
-add_executable(All_tests CircularBuffer_test.cpp Vec2D_test.cpp)
+add_executable(All_tests CircularBuffer_test.cpp Vec2D_test.cpp "tmain.cpp")
 
 # Link the test executable with the Catch2 library
 target_link_libraries(All_tests PRIVATE Catch2::Catch2)
