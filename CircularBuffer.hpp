@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <array>
+#include <stdexcept>
 
 ////////////////////////
 /// CIRCULAR BUFFER
